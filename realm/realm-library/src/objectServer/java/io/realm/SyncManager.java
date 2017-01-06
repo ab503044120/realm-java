@@ -43,6 +43,7 @@ import io.realm.log.RealmLog;
  */
 @Keep
 @Beta
+@SuppressWarnings("MS_CANNOT_BE_FINAL")
 public class SyncManager {
 
     /**

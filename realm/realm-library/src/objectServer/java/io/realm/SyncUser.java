@@ -44,7 +44,6 @@ import io.realm.internal.network.LogoutResponse;
 import io.realm.internal.objectserver.ObjectServerUser;
 import io.realm.internal.objectserver.Token;
 import io.realm.log.RealmLog;
-import io.realm.permissions.PermissionChange;
 import io.realm.permissions.PermissionModule;
 
 /**
@@ -61,8 +60,9 @@ import io.realm.permissions.PermissionModule;
  */
 @Beta
 public class SyncUser {
-
+    // Access this *ONLY* from initAndGetManagementRealmConfig
     private SyncConfiguration managementRealmConfig;
+
     private final ObjectServerUser syncUser;
 
     private SyncUser(ObjectServerUser user) {
@@ -365,16 +365,18 @@ public class SyncUser {
      * @see <a href="https://realm.io/docs/realm-object-server/#permissions">How to control permissions</a>
      */
     public Realm getManagementRealm() {
-        synchronized (this) {
-            if (managementRealmConfig == null) {
-                String managementUrl = getManagementRealmUrl(syncUser.getAuthenticationUrl());
-                managementRealmConfig = new SyncConfiguration.Builder(this, managementUrl)
-                        .modules(new PermissionModule())
-                        .build();
-            }
-        }
+        return Realm.getInstance(initAndGetManagementRealmConfig());
+    }
 
-        return Realm.getInstance(managementRealmConfig);
+    // return the management config, initializing it if necessary
+    private synchronized SyncConfiguration initAndGetManagementRealmConfig() {
+        if (managementRealmConfig == null) {
+            String managementUrl = getManagementRealmUrl(syncUser.getAuthenticationUrl());
+            managementRealmConfig = new SyncConfiguration.Builder(this, managementUrl)
+                    .modules(new PermissionModule())
+                    .build();
+        }
+        return managementRealmConfig;
     }
 
     // Creates the URL to the permission Realm based on the authentication URL.
